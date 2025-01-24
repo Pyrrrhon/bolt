@@ -1,19 +1,23 @@
 import { Hono } from 'hono'
 import { getSystemPrompt, STARTER_TEMPLATES, staterTemplateSelectionPrompt } from "@zicor/prompts"
 import { reactPrompt } from "./test_prompt"
+import { streamSSE } from 'hono/streaming';
+import { Candidate , Part} from './types/llmResponse'
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 
-app.get('/', async (c) => {
+app.post('/chat', async (c) => {
     try {
+        const body = await c.req.json()
+        const prompt = body.prompt
         const messages = [
             { role: "model", parts: [{  "text": getSystemPrompt() }]},
             { role: "user", parts: [{  "text": reactPrompt }] },
             { role: "user", parts: [{'text': 'For all designs I ask you to make, have them be beautiful, not cookie cutter. Make webpages that are fully featured and worthy for production.\n\nBy default, this template supports JSX syntax with Tailwind CSS classes, React hooks, and Lucide React for icons. Do not install other packages for UI themes, icons, etc unless absolutely necessary or I request them.\n\nUse icons from lucide-react for logos.\n\nUse stock photos from unsplash where appropriate, only valid URLs you know exist. Do not download the images, only link to them in image tags.'}]},
-                {
-                    role: "user",
-                    parts: [{"text":"Create todo application"}],
-                },
+            {
+                role: "user",
+                parts: [{"text": prompt}],
+            },
         ];
         //const answer = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
         //    messages,
@@ -23,10 +27,10 @@ app.get('/', async (c) => {
 
         console.log("messges", { contents: messages })
 
-        const url =      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=" + c.env.API_KEY
+        const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:streamGenerateContent?alt=sse&key=" + c.env.API_KEY
 
          const response = await fetch(
-             "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=",
+             url,
                  {
                  method: "POST",
                  headers: { "Content-Type": "application/json" },
@@ -34,44 +38,46 @@ app.get('/', async (c) => {
              }
          );
 
+         if (!response.ok) {
+             throw new Error(`HTTP error! status: ${response.status}`);
+         }
 
-        // const reader = response.body.getReader();
-        // while (true) {
-        // const { done, value } = await reader.read();
-        // if (done) {
-        //     break;
-        // }
-        // const chunk = new TextDecoder("utf-8").decode(value);
+        const reader = response?.body?.getReader();
+        let accumulatedData = ''; 
 
-        // console.log("Chunk:", chunk.slice(6))      
-        // console.log(JSON.parse(chunk.slice(6)));
-        // } 
-        const reader = response.body.getReader();
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-                break;
+        return streamSSE(c, async (stream) => {
+            while (true) {
+                const { done, value } = await reader?.read() as ReadableStreamReadResult;
+                if (done) {
+                    break;
+                }
+                const chunk = new TextDecoder("utf-8").decode(value);
+                accumulatedData += chunk.replace(/^data:\s*/, ''); 
+            try {
+                let id = 0
+                if (isCompleteJSON(accumulatedData)) {
+                    const parsedChunk = JSON.parse(accumulatedData);
+                    const text = parsedChunk.candidates
+                    .map((candidate:Candidate) => candidate.content.parts.map((part: Part) => part.text).join('')) 
+                    .join(''); 
+                    console.log(text);
+                    await stream.writeSSE({
+                        data: text,
+                        event: 'llm output',
+                        id: String(id++)
+                    })
+                    accumulatedData = ''; 
+                }
+            } catch (parseError) {
+
+                console.error("JSON Parse Error:", parseError);
             }
-            const chunk = new TextDecoder("utf-8").decode(value);
+            }
+        })
 
-            const parsedChunk = JSON.parse(chunk.slice(6));
-            const text = parsedChunk.candidates
-            .map(candidate => candidate.content.parts.map(part => part.text).join('')) // Join parts into a single string
-            .join(''); // Join all candidates into a single string
-            console.log("Text:", text);
 
-        }
-        console.log("Response:",response)
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-            return new Response(response, {
-                headers: { "content-type": "text/event-stream" }
-            })
-
-            //return Response.json(answer)
+        //return stream(c, stream => stream.pipe(response.body));
         } catch (err){
             console.log("ERROR:", err)
             return Response.json({err})
@@ -102,3 +108,8 @@ app.get('/', async (c) => {
 
     export default app;
 
+
+function isCompleteJSON(data: string): boolean {
+   
+    return data.trim().startsWith('{') && data.trim().endsWith('}');
+}
