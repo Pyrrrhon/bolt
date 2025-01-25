@@ -1,23 +1,40 @@
-"use client"
+"use client";
 
-import { Sandpack } from "@codesandbox/sandpack-react";
+import {
+  SandpackProvider,
+  SandpackLayout,
+  SandpackCodeEditor,
+  SandpackFileExplorer,
+  SandpackPreview,
+} from "@codesandbox/sandpack-react";
 
-export const TestSandPack =()=> {
+export const TestSandPack = ({ files }: any) => {
   return (
-    <Sandpack
-      files={{
-        '/Wrapper.js': `export default () => "";`,
-      
-        '/Button.js': {
-          code: `export default () => {
-  return <button>Hello</button>
-};`,
-          readOnly: true, // Set as non-editable, defaults to `false`
-          active: true, // Set as main file, defaults to `false`
-          hidden: false // Tab visibility, defaults to `false`
-        }
+    <SandpackProvider
+      options={{
+        externalResources: ["https://cdn.tailwindcss.com"],
+        classes: {
+          "sp-wrapper": "custom-wrapper",
+          "sp-layout": "custom-layout",
+          "sp-tab-button": "custom-tab",
+        },
+        // showTabs: true,
+        showNavigator: true,
+        closableTabs: true,
       }}
+      files={files}
       template="react"
-    />
-  )
+      customSetup={{
+        dependencies: {
+          "react-markdown": "latest",
+        },
+      }}
+    >
+      <SandpackLayout>
+        <SandpackFileExplorer />
+        <SandpackCodeEditor />
+        <SandpackPreview /> {/* Added Preview Component */}
+      </SandpackLayout>
+    </SandpackProvider>
+  );
 };

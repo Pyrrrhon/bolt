@@ -7,13 +7,14 @@ import {
 import { reactPrompt } from "./test_prompt";
 import { streamSSE } from "hono/streaming";
 import { Candidate, Part } from "./types/llmResponse";
+import { cors } from "hono/cors";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
-
+app.use(cors())
 app.post("/chat", async (c) => {
   try {
     const body = await c.req.json();
-    const userprompt = body.prompt;
+    const userprompt = body.userprompt;
     const messages = [
       { role: "model", parts: [{ text: getSystemPrompt() }] },
       { role: "user", parts: [{ text: reactPrompt }] },
