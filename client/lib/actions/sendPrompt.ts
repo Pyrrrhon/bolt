@@ -1,7 +1,14 @@
 "use server";
 import axios from "axios";
+import { parseXml, Step } from "../parser/xmlParser";
+import { SetStateAction } from "react";
 
-export const sendPrompt = async (userPrompt: string) => {
+export const sendPrompt = async (
+  userPrompt: string
+
+
+) => {
+
   try {
     const response = await axios.post(
       `${process.env.NEXT_PUBLIC_BACKEND}/chat`,
@@ -31,6 +38,7 @@ export const sendPrompt = async (userPrompt: string) => {
 
           try {
             console.log("Received data:", jsonString);
+
           } catch (err) {
             console.error("Failed to parse JSON:", jsonString);
           }
@@ -45,7 +53,10 @@ export const sendPrompt = async (userPrompt: string) => {
     stream.on("error", (err: Error) => {
       console.error("Stream error:", err);
     });
+
   } catch (error) {
     console.error("Error sending prompt:", error);
   }
+
+
 };
