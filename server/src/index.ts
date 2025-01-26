@@ -16,7 +16,7 @@ app.post("/chat", async (c) => {
     const body = await c.req.json();
     const userprompt = body.userprompt;
     const messages = [
-      { role: "model", parts: [{ text: getSystemPrompt() }] },
+      { role: "model", parts: [{ text: `${getSystemPrompt()} ` }] },
       { role: "user", parts: [{ text: reactPrompt }] },
       {
         role: "user",
