@@ -6,6 +6,7 @@ export const useParser = (userPrompt: string) => {
     const [streamedData, setStreamedData] = useState<Step[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
+
     const fetchStreamedData = async () => {
         setIsLoading(true);
         setStreamedData([]);
@@ -35,27 +36,29 @@ export const useParser = (userPrompt: string) => {
                 const chunk = decoder.decode(value, { stream: true });
                 accumulatedData += chunk;
 
-                const lines = accumulatedData.split("\n");
+                const lines = accumulatedData.split(/\r?\n/);
                 accumulatedData = lines.pop() || "";
 
 
                 for (const line of lines) {
                     if (line.startsWith("data:")) {
-                        const jsonString = line.slice(5).trim();
+                        const jsonString = line.slice(5).trim() + "\n";
                         try {
                             const cleanedJsonString = jsonString.replace(/<\/boltArtifact>.*?<boltArtifact[^>]*>/, '');
 
                             const parsedData = parseXml(cleanedJsonString);
                             console.log(parsedData)
 
+
+
                             setStreamedData(prev => {
                                 // Create a Set of existing IDs //for removing duplaictes
-                                const existingIds = new Set(prev.map(step => step.id));
+                                // const existingIds = new Set(prev.map(step => step.id));
 
 
-                                const newSteps = parsedData.filter(step => !existingIds.has(step.id));
+                                // const newSteps = parsedData.filter(step => !existingIds.has(step.id));
 
-                                return [...prev, ...newSteps];
+                                return [...prev, ...parsedData];
                             });
                         } catch (err) {
                             console.error("Failed to parse JSON:", jsonString);
@@ -72,6 +75,7 @@ export const useParser = (userPrompt: string) => {
     };
 
     return {
+
         streamedData,
         isLoading,
         fetchStreamedData

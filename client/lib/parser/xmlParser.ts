@@ -4,11 +4,11 @@
 // const ARTIFACT_ACTION_TAG_CLOSE = "</boltAction>";
 
 enum StepType {
-  CreateFolder,
-  CreateFile,
-  ModifyFile,
-  DeleteFile,
-  ShellCommand,
+  CreateFolder = "CreateFolder",
+  CreateFile = "CreateFile",
+  ModifyFile = "ModifyFile",
+  DeleteFile = "DeleteFile",
+  ShellCommand = "ShellCommand",
 }
 
 export interface Step {
@@ -17,6 +17,7 @@ export interface Step {
   description: string;
   type: StepType;
   code: string;
+  filePath: string;
 }
 
 // interface MessageState {
@@ -41,12 +42,32 @@ const state: State = {
 };
 export const step: Step[] = [];
 let id = 1;
+// <boltArtifact id="blog-site" title="Blog Site with
+// React, Tailwind CSS, and Lucide Icons">
 
+
+// <boltAction type="file" filePath="package.json">{
+//   "name": "snake",
+//   "scripts": {
+//     "dev": "vite"
+//   }
+//   ...
+// }</boltAction>
 export const parseXml = (chunk: string) => {
+  console.log(chunk)
   state.buffer += chunk;
+  const artifactTitle = state.buffer.match(/``+\s*html\s*<boltArtifact\s+[^\>]*>/)
+
+  if (artifactTitle) {
+    state.buffer = state.buffer.replace(artifactTitle[0], "")
+  }
+  const endArtifact = state.buffer.match(/<\/boltArtifact>\s*``+/)
+  if (endArtifact) {
+    state.buffer = state.buffer.replace(endArtifact[0], "")
+  }
 
   const artifactOpen = state.buffer.match(
-    /<boltAction\s+type="([^"]+)"(?:\s+filePath="([^"]+)")?>/
+    /<boltAction\s+type\s*="([^"]+)"(?:\s+filePath\s*="([^"]+)")?>/
   );
   if (artifactOpen) {
     const [, type, filePath] = artifactOpen;
@@ -67,6 +88,7 @@ export const parseXml = (chunk: string) => {
         ? StepType.CreateFile
         : StepType.ShellCommand,
       code: "",
+      filePath,
     });
     state.buffer = state.buffer.replace(artifactOpen[0], "");
   }
@@ -78,7 +100,7 @@ export const parseXml = (chunk: string) => {
 
     const currentStepIndex = step.length - 1;
     if (currentStepIndex >= 0) {
-      step[currentStepIndex].code += state.MessageState.content.trim();
+      step[currentStepIndex].code = state.MessageState.content;
     }
 
     state.MessageState = undefined;
@@ -93,6 +115,7 @@ export const parseXml = (chunk: string) => {
     state.MessageState.content += state.buffer;
     state.buffer = "";
   }
+  console.log(step)
   return step;
 };
 
