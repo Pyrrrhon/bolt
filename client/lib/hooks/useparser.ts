@@ -6,6 +6,7 @@ export const useParser = (userPrompt: string) => {
     const [streamedData, setStreamedData] = useState<Step[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
+
     const fetchStreamedData = async () => {
         setIsLoading(true);
         setStreamedData([]);
@@ -35,13 +36,13 @@ export const useParser = (userPrompt: string) => {
                 const chunk = decoder.decode(value, { stream: true });
                 accumulatedData += chunk;
 
-                const lines = accumulatedData.split("\n");
+                const lines = accumulatedData.split(/\r?\n/);
                 accumulatedData = lines.pop() || "";
 
 
                 for (const line of lines) {
                     if (line.startsWith("data:")) {
-                        const jsonString = line.slice(5).trim();
+                        const jsonString = line.slice(5).trim() + "\n";
                         try {
                             let cleanedJsonString = jsonString.replace(/<\/boltArtifact>.*?<boltArtifact[^>]*>/, '');
                             console.log("cleaned Json",cleanedJsonString)
@@ -50,6 +51,8 @@ export const useParser = (userPrompt: string) => {
                             const parsedData = parseXml(cleanedJsonString);
                             
                             console.log(parsedData)
+
+
 
                             setStreamedData(prev => {
                                 // Create a Set of existing IDs //for removing duplaictes
@@ -71,6 +74,7 @@ export const useParser = (userPrompt: string) => {
     };
 
     return {
+
         streamedData,
         isLoading,
         fetchStreamedData
