@@ -30,7 +30,7 @@
    * Environment Variables
    * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
    */
-  "vars": { "API_KEY": "AIzaSyAyWRvOfxMFKQD8Kpk4hPODlswvrtHYtVU" }
+  "vars": { "API_KEY": ""}
   /**
    * Note: Use secrets to store sensitive data.
    * https://developers.cloudflare.com/workers/configuration/secrets/
