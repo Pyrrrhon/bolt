@@ -7,15 +7,23 @@ import { Step } from "@/lib/parser/xmlParser";
 import { useRecoilValue } from "recoil";
 import { serverResponseAtom } from "@/lib/atoms/serverResponseAtom";
 import { useParser } from "@/lib/hooks/useparser";
+import FileExplorer from "@/components/FileExplorer";
+import { FileNode, FileStore } from "@/lib/files/files";
+import { useFileExplorer } from "@/lib/hooks/useFileExplorer";
 
 export default function Home() {
+  const fileStore = new FileStore();
   const [userPrompt, setUserPrompt] = useState("");
   const { streamedData, isLoading, fetchStreamedData } = useParser(userPrompt);
+  //const { files } = useFileExplorer(streamedData, fileStore)
+  console.log("Streamed Data:",streamedData)
+ 
 
   async function handleClick() {
     await fetchStreamedData();
   }
 
+  //console.log(files)
   return (
     <>
       <div className="flex flex-col items-center justify-center h-screen">
@@ -34,7 +42,9 @@ export default function Home() {
           </button>
         </div>
 
-        {/* <TestSandPack files={fileTree} /> */}
+        {/* <FileExplorer streamedData={streamedData} setFiles={setFiles} /> */}
+
+        <TestSandPack files={streamedData} />  
       </div>
     </>
   );

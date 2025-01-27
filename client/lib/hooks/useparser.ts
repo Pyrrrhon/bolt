@@ -43,22 +43,21 @@ export const useParser = (userPrompt: string) => {
                     if (line.startsWith("data:")) {
                         const jsonString = line.slice(5).trim();
                         try {
-                            const cleanedJsonString = jsonString.replace(/<\/boltArtifact>.*?<boltArtifact[^>]*>/, '');
+                            let cleanedJsonString = jsonString.replace(/<\/boltArtifact>.*?<boltArtifact[^>]*>/, '');
+                            console.log("cleaned Json",cleanedJsonString)
+                            cleanedJsonString = cleanedJsonString + '\n'
 
                             const parsedData = parseXml(cleanedJsonString);
+                            
                             console.log(parsedData)
 
                             setStreamedData(prev => {
                                 // Create a Set of existing IDs //for removing duplaictes
-                                const existingIds = new Set(prev.map(step => step.id));
-
-
-                                const newSteps = parsedData.filter(step => !existingIds.has(step.id));
-
-                                return [...prev, ...newSteps];
+                                return [...prev, ...parsedData];
                             });
                         } catch (err) {
                             console.error("Failed to parse JSON:", jsonString);
+                            console.error(err);
                         }
                     }
                 }

@@ -63,10 +63,9 @@ app.post("/chat", async (c) => {
         if (done) {
           break;
         }
-        const chunk = new TextDecoder("utf-8").decode(value);
+        const chunk = new TextDecoder().decode(value);
         accumulatedData += chunk.replace(/^data:\s*/, "");
         try {
-          let id = 0;
           if (isCompleteJSON(accumulatedData)) {
             const parsedChunk = JSON.parse(accumulatedData);
             const text = parsedChunk.candidates
@@ -77,8 +76,6 @@ app.post("/chat", async (c) => {
             console.log(text);
             await stream.writeSSE({
               data: text,
-              event: "llm output",
-              id: String(id++),
             });
             accumulatedData = "";
           }

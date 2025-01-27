@@ -26,7 +26,6 @@ export interface Step {
 // }
 interface State {
   MessageState?: {
-    insideAction?: boolean;
     currentAction?: string;
     filePath?: string | null;
     content: string;
@@ -44,6 +43,17 @@ let id = 1;
 
 export const parseXml = (chunk: string) => {
   state.buffer += chunk;
+  
+  const artifactTitle = state.buffer.match(/``+html<boltArtifact\s+[^\>]*>/)
+   
+  // const artifactTitle = state.buffer.match(/<boltArtifact[^>]*>/)
+
+  
+
+  if (artifactTitle) {
+
+    state.buffer = state.buffer.replace(artifactTitle[0], "")
+  }
 
   const artifactOpen = state.buffer.match(
     /<boltAction\s+type="([^"]+)"(?:\s+filePath="([^"]+)")?>/
@@ -52,7 +62,6 @@ export const parseXml = (chunk: string) => {
     const [, type, filePath] = artifactOpen;
 
     state.MessageState = {
-      insideAction: true,
       currentAction: type,
       filePath: filePath,
       content: "",
@@ -73,7 +82,7 @@ export const parseXml = (chunk: string) => {
   const actionCloseMatch = state.buffer.match(/<\/boltAction>/);
   if (actionCloseMatch && state.MessageState) {
     const contentBeforeClose = state.buffer.split(/<\/boltAction>/)[0];
-    state.MessageState.content += contentBeforeClose;
+    state.MessageState.content = contentBeforeClose;
 
 
     const currentStepIndex = step.length - 1;

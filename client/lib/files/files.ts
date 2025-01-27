@@ -1,11 +1,12 @@
 //Maps used as they are Optimized for frequent updates - Zicor
-type FileNode = {
+export type FileNode = {
     type: 'file' | 'dir';
     content?: string;
     children?: Map<string, FileNode>
 }
+
 export class FileStore {
-    private files: Map<string, FileNode>
+    public files: Map<string, FileNode>
 
     constructor() {
         this.files = new Map();
@@ -52,6 +53,20 @@ export class FileStore {
     public getFile(path: string): FileNode | null {
         const node = this.resolvePath(path);
         return node?.type === 'file' ? node : null;
+    }
+
+    public delete(path: string): boolean {
+        const parts = path.split('/').filter(part => part.length > 0);
+        if (parts.length === 0) return false; // Can't delete root
+
+        const parentPath = parts.slice(0, -1).join('/');
+        const parentNode = this.resolvePath(parentPath);
+
+        if (!parentNode || parentNode.type !== 'dir' || !parentNode.children) {
+            return false;
+        }
+
+        return parentNode.children.delete(parts[parts.length - 1]);
     }
 
 }

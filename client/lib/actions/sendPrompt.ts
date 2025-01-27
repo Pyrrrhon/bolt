@@ -38,8 +38,12 @@ export const sendPrompt = async (
 
           try {
             console.log("Received data:", jsonString);
+<<<<<<< Updated upstream
 
           } catch (err) {
+=======
+          } catch (error) {
+>>>>>>> Stashed changes
             console.error("Failed to parse JSON:", jsonString);
           }
         }
