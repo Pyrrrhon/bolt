@@ -54,7 +54,7 @@ let id = 1;
 //   ...
 // }</boltAction>
 export const parseXml = (chunk: string) => {
-  console.log(chunk)
+  console.log("Raw chunk:", chunk)
   state.buffer += chunk;
   const artifactTitle = state.buffer.match(/``+\s*html\s*<boltArtifact\s+[^\>]*>/)
 
@@ -115,7 +115,7 @@ export const parseXml = (chunk: string) => {
     state.MessageState.content += state.buffer;
     state.buffer = "";
   }
-  console.log(step)
+  console.log("xmlParser Step return:", step)
   return step;
 };
 

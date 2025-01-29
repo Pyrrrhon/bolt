@@ -8,6 +8,7 @@ import { reactPrompt } from "./test_prompt";
 import { streamSSE } from "hono/streaming";
 import { Candidate, Part } from "./types/llmResponse";
 import { cors } from "hono/cors";
+import { convertToCoreMessages } from "ai"
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
 app.use(cors())
@@ -53,40 +54,50 @@ app.post("/chat", async (c) => {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const reader = response?.body?.getReader();
-    let accumulatedData = "";
+    c.header("Content-Type", "text/event-stream");
+    c.header("Cache-Control", "no-cache");
+    c.header("Connection", "keep-alive");
+    c.header("Access-Control-Allow-Origin", "*");
 
-    return streamSSE(c, async (stream) => {
-      while (true) {
-        const { done, value } =
-          (await reader?.read()) as ReadableStreamReadResult;
-        if (done) {
-          break;
-        }
-        const chunk = new TextDecoder("utf-8").decode(value);
-        accumulatedData += chunk.replace(/^data:\s*/, "");
-        try {
-          let id = 0;
-          if (isCompleteJSON(accumulatedData)) {
-            const parsedChunk = JSON.parse(accumulatedData);
-            const text = parsedChunk.candidates
-              .map((candidate: Candidate) =>
-                candidate.content.parts.map((part: Part) => part.text).join("")
-              )
-              .join("");
-            console.log(text);
-            await stream.writeSSE({
-              data: text,
-              event: "llm output",
-              id: String(id++),
-            });
-            accumulatedData = "";
-          }
-        } catch (parseError) {
-          console.error("JSON Parse Error:", parseError);
-        }
-      }
-    });
+    // Forward the raw readable stream directly
+    return c.body(response.body);
+
+    //c.header("Access-Control-Allow-Origin", "*");
+    //c.header("Access-Control-Allow-Headers", "Content-Type");
+    //c.header("Access-Control-Allow-Methods", "GET");
+    //c.header("Content-Type", "text/event-stream");
+    //c.header("Cache-Control", "no-cache");
+    //c.header("Connection", "keep-alive");
+
+    //return streamSSE(c, async (stream) => {
+    //  while (true) {
+    //    const { done, value } =
+    //      (await reader?.read()) as ReadableStreamReadResult;
+    //    if (done) {
+    //      break;
+    //    }
+    //    const chunk = new TextDecoder().decode(value);
+    //    accumulatedData += chunk.replace(/^data:\s*/, "");
+    //    try {
+    //
+    //      if (isCompleteJSON(accumulatedData)) {
+    //        const parsedChunk = JSON.parse(accumulatedData);
+    //        const text = parsedChunk.candidates
+    //          .map((candidate: Candidate) =>
+    //            candidate.content.parts.map((part: Part) => part.text).join("")
+    //          )
+    //          .join("");
+    //        console.log(text);
+    //        await stream.writeSSE({
+    //          data: `${[text]}`,
+    //        });
+    //        accumulatedData = "";
+    //      }
+    //    } catch (parseError) {
+    //      console.error("JSON Parse Error:", parseError);
+    //    }
+    //  }
+    //});
 
     //return stream(c, stream => stream.pipe(response.body));
   } catch (err) {
