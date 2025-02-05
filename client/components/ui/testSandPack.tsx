@@ -13,7 +13,7 @@ import { useState } from "react";
 const dependencies = {
   "lucide-react": "latest",
   // recharts: "2.9.0",
-  // "react-router-dom": "latest",
+   "react-router-dom": "latest",
   // "@radix-ui/react-accordion": "^1.2.0",
   // "@radix-ui/react-alert-dialog": "^1.1.1",
   // "@radix-ui/react-aspect-ratio": "^1.1.0",
@@ -80,7 +80,19 @@ export const TestSandPack = ({ files }: { files: Step[] }) => {
           </button>
         </div>
         <SandpackProvider
-          files={parsedFiles(files)}
+            files={{"index.tsx":`import React, { StrictMode } from "react";
+            import { createRoot } from "react-dom/client";
+            import "./styles.css";
+
+            import App from "./src/App";
+
+            const root = createRoot(document.getElementById("root"));
+            root.render(
+                <StrictMode>
+                <App />
+                </StrictMode>
+            );`,...parsedFiles(files)}}
+          //files={parsedFiles(files)}
           template="react-ts"
           options={{
             externalResources: [

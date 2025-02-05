@@ -20,11 +20,14 @@ export interface Part {
 export const useParser = (userPrompt: string) => {
     const [streamedData, setStreamedData] = useState<Step[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [allText, setAllText] = useState<string>("");
 
 
+    //console.log("Parse This Bitch: >.<",allText);
     const fetchStreamedData = async () => {
         setIsLoading(true);
         setStreamedData([]);
+
 
         try {
             const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND}/chat`, {
@@ -44,6 +47,7 @@ export const useParser = (userPrompt: string) => {
 
 
 
+            let allText = ""
             while (true) {
                 const { done, value } = await reader.read();
 
@@ -53,16 +57,17 @@ export const useParser = (userPrompt: string) => {
                 const chunk = new TextDecoder().decode(value);
                 accumulatedData += chunk.replace(/^data:\s*/, "");
                 if (isCompleteJSON(accumulatedData)) {
-                    console.log(accumulatedData)
+                    //console.log(accumulatedData)
                     const parsedChunk = JSON.parse(accumulatedData);
-                    console.log(parsedChunk)
+                    //console.log(parsedChunk)
                     const text = parsedChunk.candidates
                     .map((candidate: Candidate) =>
                          candidate.content.parts.map((part: Part) => part.text).join("")
                         )
                         .join("");
-                    const cleanedJsonString = text.replace(/<\/boltArtifact>.*?<boltArtifact[^>]*>/, '');
-                    const parsedData = parseXml(cleanedJsonString);
+                    //const cleanedJsonString = text.replace(/<\/boltArtifact>.*?<boltArtifact[^>]*>/, '');
+                    setAllText(prevAllText => prevAllText + text);
+                    const parsedData = parseXml(text);
                     setStreamedData(prev => {
                         // Create a Set of existing IDs //for removing duplaictes
                         // const existingIds = new Set(prev.map(step => step.id));
@@ -72,10 +77,11 @@ export const useParser = (userPrompt: string) => {
 
                         return [...prev, ...parsedData];
                     });
-                    console.log("Latest Should work :",parsedData)
+                    //console.log("Latest Should work :",parsedData)
 
                     accumulatedData = ""
                 }
+
 
                 //let chunk = decoder.decode(value, { stream: true });
                 //chunk = chunk.split('\n').map(line => line.replace(/^\s*data:\s*/, '')).join('\n');
