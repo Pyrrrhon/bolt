@@ -47,7 +47,6 @@ export const useParser = (userPrompt: string) => {
 
 
 
-            let allText = ""
             while (true) {
                 const { done, value } = await reader.read();
 

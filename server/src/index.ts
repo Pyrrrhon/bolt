@@ -41,7 +41,7 @@ app.post("/chat", async (c) => {
     console.log("messges", { contents: messages });
 
     const url =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:streamGenerateContent?alt=sse&key=" +
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=" +
       c.env.API_KEY;
 
     const response = await fetch(url, {
